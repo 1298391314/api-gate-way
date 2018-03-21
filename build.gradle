@@ -1,0 +1,71 @@
+group 'com.kingdee.cloudhub.sc'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+sourceCompatibility = 1.8
+
+buildscript {
+    ext {
+        springBootVersion = '1.5.9.RELEASE'
+        netflixVersion="1.4.3.RELEASE"
+    }
+    repositories {
+        mavenLocal()
+        maven { url "http://192.168.0.22/nexus/content/repositories/develop/"}
+        maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+        maven { url "http://repo.spring.io/release" }
+        maven { url "http://repo.spring.io/milestone" }
+        maven { url "http://repo.spring.io/snapshot" }
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+repositories {
+    mavenLocal()
+    maven { url "http://192.168.0.22/nexus/content/repositories/develop/"}
+    maven { url "http://192.168.0.22/nexus/content/repositories/third" }
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+    maven { url "http://repo.spring.io/release" }
+    maven { url "http://repo.spring.io/milestone" }
+    maven { url "http://repo.spring.io/snapshot" }
+    mavenCentral()
+}
+
+configurations {
+    compile.exclude group: "org.slf4j",module: 'slf4j-log4j12'
+}
+
+dependencies {
+    compile(
+            "org.springframework.boot:spring-boot-starter-web:$springBootVersion",
+            "org.springframework.cloud:spring-cloud-starter-netflix-eureka-server:$netflixVersion",
+            "org.springframework.cloud:spring-cloud-starter-zuul:$netflixVersion",
+            "org.springframework.boot:spring-boot-starter-actuator",
+            "org.springframework.retry:spring-retry:1.2.2.RELEASE",
+    )
+}
+
+jar {
+    String someString = ''
+    configurations.runtime.each {someString = someString + " lib\\"+it.name}
+    manifest {
+        attributes 'Main-Class': 'com.kingdee.cloudhub.sc.gateway.Application'
+        attributes 'Class-Path': someString
+    }
+}
+
+//清除上次的编译过的文件
+task clearPj(type:Delete){
+    delete 'build','target'
+}
+
+task copyJar(type:Copy){
+    from configurations.runtime
+    into ('build/libs/lib')
+}
+
+task packageJar(type: Copy,dependsOn: [build,copyJar])
